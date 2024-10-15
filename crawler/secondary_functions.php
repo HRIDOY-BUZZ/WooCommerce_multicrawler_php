@@ -15,27 +15,28 @@
 
     function fetchProductUrls($count, $i, $storeUrl) {
         echo "$i of $count.\tFetching products from [" . constyle(strtoupper($storeUrl), 33) . "]\n\n";
-        $collectionUrl = 'https://' . $storeUrl . '/collections/all';
+        $collectionUrl = 'https://' . $storeUrl . '/shop/';
+        echo "Browsing " . constyle($collectionUrl, 33) . "\n\n";
         $productUrls = [];
         $page = 1;
         do {
-            $url = $page == 1 ? $collectionUrl : $collectionUrl . "?page=$page";
+            $url = $page == 1 ? $collectionUrl : $collectionUrl . "page/$page/";
             $xpath = getXPathData($url);
 
             if($xpath == "break") break;
 
-            $nodes = $xpath->query("//a[contains(@href, '/collections/all/products/')]");
-            if($nodes->length < 1) {
-                $nodes = $xpath->query("//a[contains(@href, '/products/')]");
-            }
+            $nodes = $xpath->query("//a[contains(@href, '/product/')]");
             $i = 0;
             foreach ($nodes as $node) {
                 $purl = $node->getAttribute('href');
+                
                 if(strpos($purl, $storeUrl) === false) {
                     $full_url = "https://" . $storeUrl . $node->getAttribute('href');
                 } else {
                     $full_url = $purl;
                 }
+                echo "\t" . constyle($full_url, 33) . "\n";
+
                 if(strpos($full_url, '#') !== false) {
                     $full_url = explode('#', $full_url)[0];
                 }
@@ -53,6 +54,8 @@
             clear_line();
             echo constyle("\tPage: ", 92).constyle($page-1, 91).constyle(" ==> URLs in the Page: ", 92).constyle($i, 91).constyle(" ==> Total Product URLs: ", 92).constyle(count($productUrls), 91);
         } while (!empty($nodes));
+
+        echo "\t " . constyle("Count: ", 92).constyle(count($productUrls), 91).constyle(" ==> Total Product URLs: ", 92) . "\n";
 
         clear_line();
         echo constyle("\tCalculating...", 94);

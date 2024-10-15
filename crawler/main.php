@@ -16,7 +16,7 @@ START:
 
     clear_console();
     //Display Intro
-    echo constyle("\n\t\tSHOPIFY WEB MULTI-CRAWLER\n\n", 96);
+    echo constyle("\n\t\tWooCommerce WEB MULTI-CRAWLER\n\n", 96);
 
     // Display MENU
     echo constyle(constyle("\n\t\t\t[MENU]:\n\n", 96), 4);
