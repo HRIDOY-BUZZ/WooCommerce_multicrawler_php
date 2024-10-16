@@ -15,36 +15,31 @@
 
     function fetchProductUrls($count, $i, $storeUrl) {
         echo "$i of $count.\tFetching products from [" . constyle(strtoupper($storeUrl), 33) . "]\n\n";
-        $collectionUrl = 'https://' . $storeUrl . '/shop/';
-        echo "Browsing " . constyle($collectionUrl, 33) . "\n\n";
+        $wpdata = "/wp-json/wp/v2/product?per_page=100&_fields=link&page=";
+        $wpJsonUrl = 'https://' . $storeUrl . $wpdata;
+        // echo "Browsing " . constyle($collectionUrl, 33) . "\n\n";
         $productUrls = [];
         $page = 1;
+        $dots = "";
         do {
-            $url = $page == 1 ? $collectionUrl : $collectionUrl . "page/$page/";
-            $xpath = getXPathData($url);
+            $dots = $dots . ".";
+            $url = $wpJsonUrl . $page;
+            $response = fetch_json_url($url);
 
-            if($xpath == "break") break;
+            if ($response[0] == 400) {
+                break;
+            } else if($response[0] > 400 || $response[0] < 100) {
+                echo "\n\t" . constyle("ERROR " . $response[0] . ": " . $response[1], 91) . "\n\n";
+                break;
+            }
+            $links = $response[1];
 
-            $nodes = $xpath->query("//a[contains(@href, '/product/')]");
             $i = 0;
-            foreach ($nodes as $node) {
-                $purl = $node->getAttribute('href');
-                
-                if(strpos($purl, $storeUrl) === false) {
-                    $full_url = "https://" . $storeUrl . $node->getAttribute('href');
-                } else {
-                    $full_url = $purl;
-                }
-                echo "\t" . constyle($full_url, 33) . "\n";
+            foreach ($links as $link) {
+                $purl = $link->link;
 
-                if(strpos($full_url, '#') !== false) {
-                    $full_url = explode('#', $full_url)[0];
-                }
-                if(strpos($full_url, '?') !== false) {
-                    $full_url = explode('#', $full_url)[0];
-                }
-                if(!is_duplicate($full_url, $productUrls)) {
-                    $productUrls[] = $full_url;
+                if(!is_duplicate($purl, $productUrls)) {
+                    $productUrls[] = $purl;
                     $i++;
                 }
             }
@@ -52,10 +47,8 @@
             else $page++;
 
             clear_line();
-            echo constyle("\tPage: ", 92).constyle($page-1, 91).constyle(" ==> URLs in the Page: ", 92).constyle($i, 91).constyle(" ==> Total Product URLs: ", 92).constyle(count($productUrls), 91);
-        } while (!empty($nodes));
-
-        echo "\t " . constyle("Count: ", 92).constyle(count($productUrls), 91).constyle(" ==> Total Product URLs: ", 92) . "\n";
+            echo constyle("\tLooking for Products... ", 92).constyle(count($productUrls), 91) . constyle(" " . $dots, 33);
+        } while (!empty($links));
 
         clear_line();
         echo constyle("\tCalculating...", 94);
