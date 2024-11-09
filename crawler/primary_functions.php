@@ -6,6 +6,7 @@
         if (!$storeUrls) return false;
         
         $i = 0;
+        $start_time = microtime(true);
         foreach ($storeUrls as $storeUrl) {
             $i++;
 
@@ -30,6 +31,10 @@
                 }
             }
         }
+        $end_time = microtime(true);
+        $duration = showTime($end_time - $start_time);
+
+        echo "\n\t" . constyle("Fetched ", 92) . constyle(count($storeUrls), 96) . constyle(" shops in ", 92) . constyle($duration, 96) . "\n\n";
         return true;
     }
 

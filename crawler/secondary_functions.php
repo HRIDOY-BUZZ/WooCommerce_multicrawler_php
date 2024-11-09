@@ -14,17 +14,43 @@
     }
 
     function fetchProductUrls($count, $i, $storeUrl) {
+         //*DEFINE
+        $per_page = 100;
+         //*END DEFINE
+
         echo "$i of $count.\tFetching products from [" . constyle(strtoupper($storeUrl), 33) . "]\n\n";
-        $wpdata = "/wp-json/wp/v2/product?per_page=100&_fields=link&page=";
+
+        //get product count and page count
+        $response = get_counts('https://' . $storeUrl);
+
+        if ($response[0] == 400) {
+            return null;
+        } else if($response[0] > 400 || $response[0] < 100) {
+            echo "\n\t" . constyle("ERROR " . $response[0] . ": " . $response[1], 91) . "\n\n";
+            return null;
+        }
+
+        $productCount = $response[1];
+        $pageCount = ceil($productCount / $per_page);
+
+        echo $productCount."\n";
+
+        $wpdata = "/wp-json/wp/v2/product?per_page=" . $per_page . "&_fields=id,status,title,link,excerpt,featured_media,product_cat,class_list,bundle_stock_status&page=";
         $wpJsonUrl = 'https://' . $storeUrl . $wpdata;
         // echo "Browsing " . constyle($collectionUrl, 33) . "\n\n";
-        $productUrls = [];
-        $page = 1;
+        $products = [];
+        $ids = [];
+        clear_line();
+        echo constyle("\tLooking for Products... ", 92).constyle("0", 91);
         $dots = "";
-        do {
+        for ($page = 1; $page <= $pageCount; $page++) {
             $dots = $dots . ".";
             $url = $wpJsonUrl . $page;
-            $response = fetch_json_url($url);
+            $start_time = microtime(true);
+            $response = fetch_url($url);
+            $end_time = microtime(true);
+            $duration = showTime($end_time - $start_time);
+            echo $response[0] . ": " . $duration."\n";
 
             if ($response[0] == 400) {
                 break;
@@ -32,57 +58,57 @@
                 echo "\n\t" . constyle("ERROR " . $response[0] . ": " . $response[1], 91) . "\n\n";
                 break;
             }
-            $links = $response[1];
+            $data = json_decode($response[1]);
+
+            if(empty($data)) break;
 
             $i = 0;
-            foreach ($links as $link) {
-                $purl = $link->link;
+            $prod = [];
+            foreach ($data as $d) {
+                if(!in_array($d->id, $ids) && $d->status == 'publish') {
+                    $ids[] = $d->id;
 
-                if(!is_duplicate($purl, $productUrls)) {
-                    $productUrls[] = $purl;
+                    $prod['id'] = $d->id;
+                    $prod['title'] = $d->title->rendered;
+                    $prod['link'] = $d->link;
+                    $prod['excerpt'] = $d->excerpt->rendered;
+                    $prod['featured_media'] = $d->featured_media;
+                    $prod['categories'] = $d->product_cat ? get_categories($storeUrl, $d->product_cat) : null;
+
+                    $prod['availability'] = get_availability($d->class_list ?? null, $d->bundle_stock_status ?? null);
+
+                    $products[] = $prod;
                     $i++;
                 }
+                clear_line();
+                echo constyle("\tPage: " . $page . " of " . $pageCount . "\tFetching Products... ", 92).constyle(count($ids), 91) . constyle(" " . $dots, 33);
             }
             if($i<1) break;
-            else $page++;
-
-            clear_line();
-            echo constyle("\tLooking for Products... ", 92).constyle(count($productUrls), 91) . constyle(" " . $dots, 33);
-        } while (!empty($links));
-
+        }
+        sleep(1);
         clear_line();
         echo constyle("\tCalculating...", 94);
         sleep(1);
         clear_line();
-        echo "\t" . constyle("Total Product URLs Found: ", 93).constyle(constyle(count($productUrls), 91), 1) . "\n\n";
-        return array_unique($productUrls);
+        echo "\t" . constyle("Total Products Found: ", 93).constyle(constyle(count($products), 91), 1) . "\n\n";
+        return $products;
     }
 
     function scrapeProductData($count, $p, $v, $productUrl) {
         $prcnt = 0;
-        $jsonUrl = $productUrl . '.js';
-        $response = @file_get_contents($jsonUrl, false, get_context());
+        $response = get_ld_json($productUrl);
 
-        if ($response === false) {
-            if (isset($http_response_header)) {
-                if(is_array($http_response_header) && strpos($http_response_header[0], '404') !== false) {
-                    echo "\t" . constyle("WARNING: Product not found: $productUrl", 93) . "\n";
-                    return null;
-                }
-            } else {
-                echo "\n\t" . constyle("ERROR: No internet connection. Please try again later.", 91) . "\n";
-                return "return";
-            }
-        }
-        $decoded = @json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if (!$response) {
+            echo "\t" . constyle("WARNING: Product data not found: $productUrl", 93) . "\n";
             return null;
         }
 
-        $productData = $decoded;
+        $productData = $response;
         if (!$productData) {
             return null;
         }
+        print_r($productData);
+        exit;
         $productInfo = [];
         $productTitle = $productData['title'];
         $description = strip_tags($productData['description']);
