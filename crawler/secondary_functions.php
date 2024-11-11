@@ -13,7 +13,7 @@
         return $storeUrls;
     }
 
-    function fetchProductUrls($count, $i, $storeUrl) {
+    function fetchAllProducts($count, $i, $storeUrl) {
          //*DEFINE
         $per_page = 100;
          //*END DEFINE
@@ -50,7 +50,7 @@
             $response = fetch_url($url);
             $end_time = microtime(true);
             $duration = showTime($end_time - $start_time);
-            echo $response[0] . ": " . $duration."\n";
+            // echo " -> " . $duration."\n";
 
             if ($response[0] == 400) {
                 break;
@@ -73,7 +73,8 @@
                     $prod['link'] = $d->link;
                     $prod['excerpt'] = $d->excerpt->rendered;
                     $prod['featured_media'] = $d->featured_media;
-                    $prod['categories'] = $d->product_cat ? get_categories($storeUrl, $d->product_cat) : null;
+                    // $prod['categories'] = $d->product_cat ? get_categories($storeUrl, $d->product_cat) : null;
+                    $prod['categories'] = $d->product_cat ? $d->product_cat : null;
 
                     $prod['availability'] = get_availability($d->class_list ?? null, $d->bundle_stock_status ?? null);
 
@@ -81,7 +82,7 @@
                     $i++;
                 }
                 clear_line();
-                echo constyle("\tPage: " . $page . " of " . $pageCount . "\tFetching Products... ", 92).constyle(count($ids), 91) . constyle(" " . $dots, 33);
+                echo constyle("\tPage: " . $page . " of " . $pageCount . "\tFetching Products... ", 92) . constyle(count($ids), 91) . " ($duration) " . constyle(" " . $dots, 33);
             }
             if($i<1) break;
         }

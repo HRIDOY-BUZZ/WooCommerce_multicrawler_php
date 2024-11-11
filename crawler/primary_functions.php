@@ -25,9 +25,9 @@
                     continue;
                 }
 
-                $productUrls = fetchProductUrls(count($storeUrls), $i, $storeUrl);
-                if ($productUrls) {
-                    saveToJson($shopFile, $productUrls);
+                $productdata = fetchAllProducts(count($storeUrls), $i, $storeUrl);
+                if ($productdata) {
+                    saveToJson($shopFile, $productdata);
                 }
             }
         }

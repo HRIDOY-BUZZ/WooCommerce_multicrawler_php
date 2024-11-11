@@ -160,7 +160,7 @@
         // Set cURL options
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);  // Return the response as a string
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);            // Set a 2-second timeout
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);            // Set a 30-second timeout
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);  // Follow redirects
         curl_setopt($ch, CURLOPT_FAILONERROR, false);    // Do not stop on HTTP error codes
         curl_setopt($ch, CURLOPT_HEADER, false);         // Do not include headers in the output
