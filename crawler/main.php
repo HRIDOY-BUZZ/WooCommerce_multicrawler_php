@@ -7,11 +7,6 @@
     include 'secondary_functions.php';
     include 'primary_functions.php';
 
-    function pause() {
-        echo "\nPress any key to continue...";
-        $char = get_single_char();
-    }
-
 START:
 
     clear_console();

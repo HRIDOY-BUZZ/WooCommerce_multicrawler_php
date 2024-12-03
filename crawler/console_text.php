@@ -24,6 +24,11 @@
  * 96 - bright cyan
  * 97 - bright white
  */
+
+function pause() {
+    echo "\nPress any key to continue...";
+    $char = get_single_char();
+}
 function constyle($text="", $color=0) {
     return "\033[" . $color . "m" . $text . "\033[0m";
 }
