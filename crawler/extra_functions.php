@@ -1,5 +1,5 @@
 <?php
-    function curl_single($url, $timeout = 10) {
+    function curl_single($url, $timeout = 20, $includeHeaders = false) {
         $ch = curl_init(); // Initialize cURL session
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -9,19 +9,36 @@
         curl_setopt($ch, CURLOPT_TIMEOUT, $timeout); // Set timeout
         curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.138 Safari/537.36');
     
+        if ($includeHeaders) {
+            curl_setopt($ch, CURLOPT_HEADER, true); // Include headers if requested
+        }
+    
         $response = curl_exec($ch); // Execute the request
         $error = curl_error($ch); // Capture error if any
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE); // Get HTTP status code
     
+        $headerSize = $includeHeaders ? curl_getinfo($ch, CURLINFO_HEADER_SIZE) : 0;
         curl_close($ch); // Close the cURL session
     
-        // Check for errors or unsuccessful response
         if ($response === false) {
             return [
                 'success' => false,
                 'error' => $error,
                 'http_code' => $http_code,
                 'content' => null,
+            ];
+        }
+    
+        if ($includeHeaders) {
+            $headers = substr($response, 0, $headerSize);
+            $body = substr($response, $headerSize);
+    
+            return [
+                'success' => $http_code >= 200 && $http_code < 300, // Success for 2xx status codes
+                'error' => null,
+                'http_code' => $http_code,
+                'headers' => $headers, // Return headers if requested
+                'content' => $body,
             ];
         }
     
@@ -33,7 +50,7 @@
         ];
     }
 
-    function curl_multi($urls, $timeout = 10) {
+    function curl_multi($urls, $timeout = 20) {
         if (!is_array($urls)) {
             $urls = [$urls];
         }
@@ -192,6 +209,22 @@
         return $results;
     }    
     
+    function filter_domains($storeUrls) {
+        $new_domains = [];
+        foreach ($storeUrls as $storeUrl) {
+            $storeUrl = trim($storeUrl);
+            if(strpos($storeUrl, '=') !== 0) {
+                if(strpos($storeUrl, 'http') !== false || strpos($storeUrl, '/') !== false) {
+                    $storeUrl = parse_url($storeUrl, PHP_URL_HOST);
+                }
+                if(!in_array($storeUrl, $new_domains)) {
+                    $new_domains[] = $storeUrl;
+                }
+            }
+        }
+        return $new_domains;
+    }
+
     function saveToJson($filename, $data) {
         file_put_contents($filename, json_encode($data, JSON_PRETTY_PRINT));
     }

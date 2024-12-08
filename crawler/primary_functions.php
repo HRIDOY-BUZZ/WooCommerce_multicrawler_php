@@ -37,4 +37,8 @@
         echo "\n\t" . constyle("Fetched ", 92) . constyle(count($storeUrls), 96) . constyle(" shops in ", 92) . constyle($duration, 96) . "\n\n";
         return true;
     }
+
+    function part2() {
+        //TODO: Part-2 Codes here...
+    }
 ?>
