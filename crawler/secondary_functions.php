@@ -34,66 +34,67 @@
         $productCount = $response['count'];
         $pageCount = ceil($productCount / $per_page);
 
-        echo constyle("Total products availale: " . $productCount, 92)."\n";
+        echo constyle("\tTotal Products Availale : ", 93) . constyle(constyle($productCount, 91), 1) . "\n";
 
         $wpdata = "/wp-json/wp/v2/product?per_page=" . $per_page . "&_fields=id,status,title,link,excerpt,featured_media,product_cat,class_list,bundle_stock_status&page=";
         $wpJsonUrl = 'https://' . $storeUrl . $wpdata;
         // echo "Browsing " . constyle($collectionUrl, 33) . "\n\n";
         $products = [];
         $ids = [];
-        // clear_line();
-        // echo constyle("\tLooking for Products... ", 92).constyle("0", 91);
-        // $dots = "";
-        // for ($page = 1; $page <= $pageCount; $page++) {
-        //     $dots = $dots . ".";
-        //     $url = $wpJsonUrl . $page;
-        //     $start_time = microtime(true);
-        //     $response = fetch_url($url);
-        //     $end_time = microtime(true);
-        //     $duration = showTime($end_time - $start_time);
-        //     // echo " -> " . $duration."\n";
+        clear_line();
+        echo constyle("\tGetting Product Infos... ", 92).constyle("0", 91);
+        $dots = "";
+        $page = 1;
+        while($page <= $pageCount) {
+            $dots = $dots . ".";
+            // $url = $wpJsonUrl . $page;
+            $urls = [];
+            for($i = $page; $i < $page + 10; $i++) {
+                if($i > $pageCount) break;
+                $urls[] = $wpJsonUrl . $i;
+            }
+            $page = --$i;
+            if(empty($urls)) break;
+            // //echo count($urls) . "\n";
+            $responses = get_multi_contents($urls);
+            foreach ($responses as $res) {
+                if($res[0] == 200) {
+                    $data = json_decode($res[1]);
+                    if(empty($data)) continue;
+                    // //echo count($data)."\n";
+                    $i = 0;
+                    $prod = [];
+                    foreach ($data as $d) {
+                        if(!in_array($d->id, $ids) && $d->status == 'publish') {
+                            $ids[] = $d->id;
 
-        //     if ($response[0] == 400) {
-        //         break;
-        //     } else if($response[0] > 400 || $response[0] < 100) {
-        //         echo "\n\t" . constyle("ERROR " . $response[0] . ": " . $response[1], 91) . "\n\n";
-        //         break;
-        //     }
-        //     $data = json_decode($response[1]);
+                            $prod['id'] = $d->id;
+                            $prod['title'] = $d->title->rendered;
+                            $prod['link'] = $d->link;
+                            $prod['excerpt'] = $d->excerpt->rendered;
+                            $prod['featured_media'] = $d->featured_media;
+                            $prod['categories'] = $d->product_cat ? $d->product_cat : null;
+                            // $prod['class_list'] = $d->class_list ?? null;
+                            $prod['availability'] = get_availability($d->class_list ?? null, $d->bundle_stock_status ?? null);
 
-        //     if(empty($data)) break;
-
-        //     $i = 0;
-        //     $prod = [];
-        //     foreach ($data as $d) {
-        //         if(!in_array($d->id, $ids) && $d->status == 'publish') {
-        //             $ids[] = $d->id;
-
-        //             $prod['id'] = $d->id;
-        //             $prod['title'] = $d->title->rendered;
-        //             $prod['link'] = $d->link;
-        //             $prod['excerpt'] = $d->excerpt->rendered;
-        //             $prod['featured_media'] = $d->featured_media;
-        //             // $prod['categories'] = $d->product_cat ? get_categories($storeUrl, $d->product_cat) : null;
-        //             $prod['categories'] = $d->product_cat ? $d->product_cat : null;
-
-        //             $prod['availability'] = get_availability($d->class_list ?? null, $d->bundle_stock_status ?? null);
-
-        //             $products[] = $prod;
-        //             $i++;
-        //         }
-        //         clear_line();
-        //         echo constyle("\tPage: " . $page . " of " . $pageCount . "\tFetching Products... ", 92) . constyle(count($ids), 91) . " ($duration) " . constyle(" " . $dots, 33);
-        //     }
-        //     if($i<1) break;
-        // }
-        // sleep(1);
-        // clear_line();
-        // echo constyle("\tCalculating...", 94);
-        // sleep(1);
-        // clear_line();
-        // echo "\t" . constyle("Total Products Found: ", 93).constyle(constyle(count($products), 91), 1) . "\n\n";
-        // return $products;
+                            $products[] = $prod;
+                            $i++;
+                        }
+                        clear_line();
+                        echo constyle("\tPage: " . $page . " of " . $pageCount . "\tFetching Product Infos... ", 92) . constyle(count($ids), 91) . constyle(" " . $dots, 33);
+                    }
+                    if($i<1) break;
+                }
+            }
+            $page++;
+        }
+        sleep(1);
+        clear_line();
+        echo constyle("\tCalculating...", 94);
+        sleep(1);
+        clear_line();
+        echo "\t" . constyle("Total Products Collected: ", 93).constyle(constyle(count($products), 91), 1) . "\n\n";
+        return $products;
     }
 
     function get_counts($url) {

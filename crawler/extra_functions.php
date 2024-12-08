@@ -99,11 +99,6 @@
     
         curl_multi_close($multiHandle); // Close the multi handle
     
-        // If only one URL was provided, return its response directly
-        if (count($responses) === 1) {
-            return reset($responses);
-        }
-    
         return $responses; // Return array of responses for multiple URLs
     }
 
@@ -160,7 +155,6 @@
     function get_multi_contents($urls) {
         // Fetch responses using curl_multi
         $responses = curl_multi($urls);
-    
         if (!$responses) {
             // Handle case where curl_multi returned null
             return connection_test()
@@ -169,40 +163,33 @@
         }
     
         $results = [];
-        foreach ($urls as $url) {
-            if (!isset($responses[$url])) {
-                // Handle missing response for a specific URL
-                $results[$url] = [1, "Failed to fetch contents for URL: $url"];
-                continue;
-            }
-    
-            $response = $responses[$url];
+        foreach ($responses as $response) {
             $status_code = $response['http_code'] ?? 0;
     
             if (!$response['success']) {
                 if (!connection_test()) {
                     // Internet connection issue
-                    $results[$url] = [0, "No internet connection"];
+                    $results[] = [0, "No internet connection"];
                 } else {
                     // Handle specific HTTP status codes
                     switch ($status_code) {
                         case 400:
-                            $results[$url] = [400, "Bad Request: The server cannot process the request due to a client error."];
+                            $results[] = [400, "Bad Request: The server cannot process the request due to a client error."];
                             break;
                         case 403:
-                            $results[$url] = [403, "Forbidden: You don't have permission to access this resource."];
+                            $results[] = [403, "Forbidden: You don't have permission to access this resource."];
                             break;
                         case 404:
-                            $results[$url] = [404, "Not Found: The requested resource could not be found on the server."];
+                            $results[] = [404, "Not Found: The requested resource could not be found on the server."];
                             break;
                         default:
-                            $results[$url] = [$status_code ?: 1, $response['error'] ?: "An error occurred while fetching $url."];
+                            $results[] = [$status_code ?: 1, $response['error'] ?: "An error occurred while fetching the URL."];
                             break;
                     }
                 }
             } else {
                 // Successful response
-                $results[$url] = [200, $response['content']];
+                $results[] = [200, $response['content']];
             }
         }
     
@@ -223,6 +210,17 @@
             }
         }
         return $new_domains;
+    }
+
+    function get_availability($classList, $bundleStock) {
+        if($bundleStock) {
+            if($bundleStock == 'instock') return true;
+            else return false;
+        } else if($classList) {
+            if(in_array('instock', (array)$classList)) return true;
+            else if(in_array('outofstock', (array)$classList)) return false;
+            else return null;
+        }
     }
 
     function saveToJson($filename, $data) {
