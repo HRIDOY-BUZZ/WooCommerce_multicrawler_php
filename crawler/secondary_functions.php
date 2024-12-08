@@ -34,7 +34,7 @@
         $productCount = $response['count'];
         $pageCount = ceil($productCount / $per_page);
 
-        echo $productCount."\n";
+        echo constyle("Total products availale: " . $productCount, 92)."\n";
 
         $wpdata = "/wp-json/wp/v2/product?per_page=" . $per_page . "&_fields=id,status,title,link,excerpt,featured_media,product_cat,class_list,bundle_stock_status&page=";
         $wpJsonUrl = 'https://' . $storeUrl . $wpdata;
