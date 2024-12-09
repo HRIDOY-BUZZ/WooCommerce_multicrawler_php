@@ -8,7 +8,6 @@
         $i = 0;
         $start_time = microtime(true);
         foreach ($storeUrls as $storeUrl) {
-            $i++;
 
             if (!is_dir(__DIR__ . '/../shops/')) {
                 mkdir(__DIR__ . '/../shops/');
@@ -28,13 +27,21 @@
                 $productdata = fetchAllProducts(count($storeUrls), $i, $storeUrl);
                 if ($productdata) {
                     saveToJson($shopFile, $productdata);
+                } else {
+                    $i++;
                 }
             }
         }
         $end_time = microtime(true);
         $duration = showTime($end_time - $start_time);
 
-        echo "\n\t" . constyle("Fetched ", 92) . constyle(count($storeUrls), 96) . constyle(" shops in ", 92) . constyle($duration, 96) . "\n\n";
+        echo "\n\t" . constyle("Fetched ", 92) . constyle(count($storeUrls) - $i, 96) . constyle(" shops in ", 92) . constyle($duration, 96) . "\n";
+        if($i > 0) {
+            echo "\n\t" . constyle(constyle("(".$i, 1), 91);
+            if($i > 1) echo constyle(" Shops ", 91);
+            else echo constyle(" Shop ", 91);
+            echo constyle("Failed To Crawl)", 91) . "\n\n";
+        }
         return true;
     }
 

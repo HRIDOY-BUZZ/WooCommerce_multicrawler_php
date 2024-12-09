@@ -40,6 +40,7 @@
         $wpJsonUrl = 'https://' . $storeUrl . $wpdata;
         // echo "Browsing " . constyle($collectionUrl, 33) . "\n\n";
         $products = [];
+        $all_cats = [];
         $ids = [];
         clear_line();
         echo constyle("\tGetting Product Infos... ", 92).constyle("0", 91);
@@ -47,7 +48,7 @@
         $page = 1;
         while($page <= $pageCount) {
             $dots = $dots . ".";
-            // $url = $wpJsonUrl . $page;
+            // //$url = $wpJsonUrl . $page;
             $urls = [];
             for($i = $page; $i < $page + 10; $i++) {
                 if($i > $pageCount) break;
@@ -74,6 +75,7 @@
                             $prod['excerpt'] = $d->excerpt->rendered;
                             $prod['featured_media'] = $d->featured_media;
                             $prod['categories'] = $d->product_cat ? $d->product_cat : null;
+                            $all_cats = array_merge($all_cats, $prod['categories']);
                             // $prod['class_list'] = $d->class_list ?? null;
                             $prod['availability'] = get_availability($d->class_list ?? null, $d->bundle_stock_status ?? null);
 
@@ -91,15 +93,19 @@
         sleep(1);
         clear_line();
         echo constyle("\tCalculating...", 94);
+        asort($all_cats);
         sleep(1);
         clear_line();
         echo "\t" . constyle("Total Products Collected: ", 93).constyle(constyle(count($products), 91), 1) . "\n\n";
-        return $products;
+        return [
+            'categories' => array_values(array_unique($all_cats)),
+            'products' => $products
+        ];
     }
 
     function get_counts($url) {
         $url = 'https://' . $url . "/wp-json/wp/v2/product?per_page=1&_fields=id";
-        $response = curl_single($url, 10, true); // Request with headers
+        $response = curl_single($url, 20, true); // Request with headers
 
         if (!$response['success']) {
             return [
