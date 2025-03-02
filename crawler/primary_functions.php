@@ -46,6 +46,59 @@
     }
 
     function part2() {
-        //TODO: Part-2 Codes here...
+        echo "\n" . constyle(constyle("[PART-2]", 1), 96) .": Crawling product data ===> \n\n";
+        $shopFiles = glob(__DIR__.'/../shops/*.json');
+        if(count($shopFiles) == 0) {
+            echo "No shop files found in shops directory.\n";
+            return false;
+        }
+
+        $i = 0;
+        foreach ($shopFiles as $shopFile) {
+            $storeDomain = basename($shopFile, '.json');
+            $raw_data = json_decode(file_get_contents($shopFile), true);
+            $catIds = $raw_data['categories'];
+            $productInfos = $raw_data['products'];
+            $allProducts = [];
+
+            if (!is_dir(__DIR__ . '/../feeds/')) {
+                mkdir(__DIR__ . '/../feeds/');
+            }
+
+            if (!is_dir(__DIR__ . '/../feeds/')) {
+                echo "\t" . constyle("Error creating directory: `feeds`. Please check permissions...", 91) . "\n\n";
+                return false;
+            } else {
+                $csvFilePath = __DIR__ . '/../feeds/' . $storeDomain . '.csv';
+
+                if (!$fp = @fopen($csvFilePath, 'w')) {
+                    echo constyle("\nError: Unable to open file: ".$csvFilePath, 91) . "\n\n";
+                    echo constyle("Please check if the file is already open.", 91) . "\n\n";
+                    return false;
+                }
+
+                fputcsv($fp, array("ID", "Title", "Category", "Regular Price", "Sale Price", "Brand",  "Stock", "URL", "ImageURL", "Description"));
+
+                echo ++$i . " of ". count($productInfos) . ".\tCrawling products from [" . constyle(strtoupper($storeDomain), 33) . "]\n\n";
+
+                $allcats = getCategories($storeDomain, $catIds);
+
+                foreach ($productInfos as $productInfo) {
+
+                    $categories = getProductCats($allcats, $productInfo['categories']);
+                    $productInfo['categories'] = $categories;
+
+                    $media = getProductMedia($storeDomain, $productInfo['featured_media']);
+                    $productInfo['featured_media'] = $media;
+
+                    $price = getPrice($productInfo['link']);
+                    echo "\t" . constyle("Price: ", 92) . constyle($price, 96) . "\n";
+                }
+            }
+        }
+    }
+
+    function part3() {
+        //TODO: Part-3 Codes here...
     }
 ?>

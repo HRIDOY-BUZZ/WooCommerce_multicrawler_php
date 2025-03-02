@@ -133,4 +133,53 @@
             'count' => $x_wp_total ?? false
         ];
     }
+
+    function getCategories($storeUrl, $cadIds) {
+        $all_cats = [];
+        $url = "https://" . $storeUrl . "/wp-json/wp/v2/product_cat?_fields=id,name";
+        foreach ($cadIds as $id) {
+            $url .= "&include[]=" . $id;
+        }
+        $response = get_contents($url);
+        if ($response[0] == 200) {
+            $data = json_decode($response[1]);
+            foreach ($data as $d) {
+                $all_cats[$d->id] = $d->name;
+            }
+        }
+        return $all_cats;
+    }
+
+    function getProductCats($allcats, $pcats) {
+        $cats = [];
+        foreach ($pcats as $pcat) {
+            if (isset($allcats[$pcat])) {
+                $cats[] = $allcats[$pcat];
+            }
+        }
+        $categories = implode(', ', $cats);
+        return $categories;
+    }
+
+    function getProductMedia($store, $id) {
+        $url = "https://" . $store . "/wp-json/wp/v2/media/" . $id . "?_fields=guid";
+        $response = get_contents($url);
+        if ($response[0] == 200) {
+            $data = json_decode($response[1]);
+            return $data->guid->rendered;
+        } else {
+            return "";
+        }
+    }
+
+    function getPrice($link) {
+        $price = 0;
+
+        // $response = get_contents($link);
+        // if ($response[0] == 200) {
+        //     $data = json_decode($response[1]);
+        //     $price = $data->price;
+        // }
+        return $price;
+    }
 ?>
