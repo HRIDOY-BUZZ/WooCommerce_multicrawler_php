@@ -231,17 +231,40 @@
         }
     }
 
-    function getCategories($storeUrl, $cadIds) {
+    function getCategories($storeUrl, $catIds) {
         $all_cats = [];
-        $url = "https://" . $storeUrl . "/wp-json/wp/v2/product_cat?_fields=id,name";
-        foreach ($cadIds as $id) {
-            $url .= "&include[]=" . $id;
+        $url = "https://" . $storeUrl . "/wp-json/wp/v2/product_cat?_fields=id,name&per_page=100";
+        $urls = [];
+        $i = 0;
+        $j = 0;
+        foreach ($catIds as $id) {
+            if($i == 99) {
+                $i = 0;
+                $j++;
+            }
+            if($i == 0) {
+                $urls[$j] = $url;
+            }
+            $urls[$j] .= "&include[]=" . $id;
+            $i++;
         }
-        $response = get_contents($url);
-        if ($response[0] == 200) {
-            $data = json_decode($response[1]);
-            foreach ($data as $d) {
-                $all_cats[$d->id] = $d->name;
+        if(count($urls) > 1) {
+            $responses = get_multi_contents($urls);
+            foreach ($responses as $response) {
+                if ($response[0] == 200) {
+                    $data = json_decode($response[1]);
+                    foreach ($data as $d) {
+                        $all_cats[$d->id] = $d->name;
+                    }    
+                }
+            }
+        } else {
+            $response = get_contents($urls[0]);
+            if ($response[0] == 200) {
+                $data = json_decode($response[1]);
+                foreach ($data as $d) {
+                    $all_cats[$d->id] = $d->name;
+                }
             }
         }
         return $all_cats;
@@ -251,12 +274,12 @@
         $mediaIdList = "";
         $mediaList = [];
         foreach ($products as $product) {
-            if ($product['featured_media']) {
+            if ($product['og_image'] == '' && $product['featured_media'] != '') {
                 $mediaIdList .= "&include[]=" . $product['featured_media'];
             }
         }
         $url = "https://" . $storeUrl . "/wp-json/wp/v2/media?_fields=id,guid&per_page=100" . $mediaIdList;
-        echo $url;
+        // echo $url;
         $response = get_contents($url);
         if ($response[0] == 200) {
             $data = json_decode($response[1]);

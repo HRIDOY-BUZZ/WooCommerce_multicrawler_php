@@ -73,21 +73,22 @@
                 $allcats = getCategories($storeDomain, $catIds);
                 $allMedia = getMediaList($storeDomain, $productInfos);
                 $newProductInfos = [];
+                $loader = ['-', '\\', '|', '/'];
                 foreach ($productInfos as $productInfo) {
+                    clear_line();
+                    echo "[" . $loader[$i % 4] . "] " . "\t\tUpdating...";
                     $categories = getProductCats($allcats, $productInfo['categories']);
                     $productInfo['categories'] = $categories;
 
-                    $productInfo['featured_media'] = $allMedia[$productInfo['featured_media']] ?? "";
-                    if($productInfo['featured_media'] == "") {
-                        if(isset($productInfo['og_image']) && $productInfo['og_image'] != "") {
-                            $productInfo['featured_media'] = $productInfo['og_image'];
-                        }
+                    if(isset($productInfo['og_image']) && $productInfo['og_image'] != "") {
+                        $productInfo['featured_media'] = $productInfo['og_image'];
+                    } else {
+                        $productInfo['featured_media'] = $allMedia[$productInfo['featured_media']] ?? "";
                     }
                     unset($productInfo['og_image']);
 
                     $newProductInfos[] = $productInfo;
                 }
-
                 $newFile = __DIR__ . '/../shops2/' . $storeDomain . '.json';
                 saveToJson($newFile, $newProductInfos);
             }

@@ -71,7 +71,7 @@
                             $prod['link'] = $d->link;
                             $prod['excerpt'] = $d->excerpt->rendered;
                             $prod['featured_media'] = $d->featured_media;
-                            $prod['og_image'] = $d->yoast_head_json ? get_og_image($d->yoast_head_json) : "";//$d->yoast_head_json->og_image[0]->url : null;
+                            $prod['og_image'] = $d->yoast_head_json ? get_og_image($d->yoast_head_json) : "";
                             $prod['categories'] = $d->product_cat ? $d->product_cat : null;
                             $all_cats = array_merge($all_cats, $prod['categories']);
                             // $prod['class_list'] = $d->class_list ?? null;
