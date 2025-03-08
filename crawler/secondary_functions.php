@@ -36,7 +36,7 @@
 
         echo constyle("\tTotal Products Availale : ", 93) . constyle(constyle($productCount, 91), 1) . "\n";
 
-        $wpdata = "/wp-json/wp/v2/product?per_page=" . $per_page . "&_fields=id,status,title,link,excerpt,featured_media,product_cat,class_list,bundle_stock_status&page=";
+        $wpdata = "/wp-json/wp/v2/product?per_page=" . $per_page . "&_fields=id,status,title,link,excerpt,featured_media,yoast_head_json,product_cat,class_list,bundle_stock_status&page=";
         $wpJsonUrl = 'https://' . $storeUrl . $wpdata;
         // echo "Browsing " . constyle($collectionUrl, 33) . "\n\n";
         $products = [];
@@ -48,7 +48,6 @@
         $page = 1;
         while($page <= $pageCount) {
             $dots = $dots . ".";
-            // //$url = $wpJsonUrl . $page;
             $urls = [];
             for($i = $page; $i < $page + 10; $i++) {
                 if($i > $pageCount) break;
@@ -56,13 +55,11 @@
             }
             $page = --$i;
             if(empty($urls)) break;
-            // //echo count($urls) . "\n";
             $responses = get_multi_contents($urls);
             foreach ($responses as $res) {
                 if($res[0] == 200) {
                     $data = json_decode($res[1]);
                     if(empty($data)) continue;
-                    // //echo count($data)."\n";
                     $i = 0;
                     $prod = [];
                     foreach ($data as $d) {
@@ -74,6 +71,7 @@
                             $prod['link'] = $d->link;
                             $prod['excerpt'] = $d->excerpt->rendered;
                             $prod['featured_media'] = $d->featured_media;
+                            $prod['og_image'] = $d->yoast_head_json ? get_og_image($d->yoast_head_json) : "";//$d->yoast_head_json->og_image[0]->url : null;
                             $prod['categories'] = $d->product_cat ? $d->product_cat : null;
                             $all_cats = array_merge($all_cats, $prod['categories']);
                             // $prod['class_list'] = $d->class_list ?? null;
@@ -132,44 +130,6 @@
             'http_code' => $response['http_code'],
             'count' => $x_wp_total ?? false
         ];
-    }
-
-    function getCategories($storeUrl, $cadIds) {
-        $all_cats = [];
-        $url = "https://" . $storeUrl . "/wp-json/wp/v2/product_cat?_fields=id,name";
-        foreach ($cadIds as $id) {
-            $url .= "&include[]=" . $id;
-        }
-        $response = get_contents($url);
-        if ($response[0] == 200) {
-            $data = json_decode($response[1]);
-            foreach ($data as $d) {
-                $all_cats[$d->id] = $d->name;
-            }
-        }
-        return $all_cats;
-    }
-
-    function getProductCats($allcats, $pcats) {
-        $cats = [];
-        foreach ($pcats as $pcat) {
-            if (isset($allcats[$pcat])) {
-                $cats[] = $allcats[$pcat];
-            }
-        }
-        $categories = implode(', ', $cats);
-        return $categories;
-    }
-
-    function getProductMedia($store, $id) {
-        $url = "https://" . $store . "/wp-json/wp/v2/media/" . $id . "?_fields=guid";
-        $response = get_contents($url);
-        if ($response[0] == 200) {
-            $data = json_decode($response[1]);
-            return $data->guid->rendered;
-        } else {
-            return "";
-        }
     }
 
     function getPrice($link) {

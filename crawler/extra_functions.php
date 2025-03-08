@@ -214,13 +214,68 @@
 
     function get_availability($classList, $bundleStock) {
         if($bundleStock) {
-            if($bundleStock == 'instock') return true;
-            else return false;
+            if($bundleStock == 'instock') return "Y";
+            else return "N";
         } else if($classList) {
-            if(in_array('instock', (array)$classList)) return true;
-            else if(in_array('outofstock', (array)$classList)) return false;
+            if(in_array('instock', (array)$classList)) return "Y";
+            else if(in_array('outofstock', (array)$classList)) return "N";
             else return null;
         }
+    }
+
+    function get_og_image($yoast) {
+        if(isset($yoast->og_image)) {
+            return $yoast->og_image[0]->url;
+        } else {
+            return "";
+        }
+    }
+
+    function getCategories($storeUrl, $cadIds) {
+        $all_cats = [];
+        $url = "https://" . $storeUrl . "/wp-json/wp/v2/product_cat?_fields=id,name";
+        foreach ($cadIds as $id) {
+            $url .= "&include[]=" . $id;
+        }
+        $response = get_contents($url);
+        if ($response[0] == 200) {
+            $data = json_decode($response[1]);
+            foreach ($data as $d) {
+                $all_cats[$d->id] = $d->name;
+            }
+        }
+        return $all_cats;
+    }
+
+    function getMediaList($storeUrl, $products) {
+        $mediaIdList = "";
+        $mediaList = [];
+        foreach ($products as $product) {
+            if ($product['featured_media']) {
+                $mediaIdList .= "&include[]=" . $product['featured_media'];
+            }
+        }
+        $url = "https://" . $storeUrl . "/wp-json/wp/v2/media?_fields=id,guid&per_page=100" . $mediaIdList;
+        echo $url;
+        $response = get_contents($url);
+        if ($response[0] == 200) {
+            $data = json_decode($response[1]);
+            foreach ($data as $d) {
+                $mediaList[$d->id] = $d->guid->rendered;
+            }
+        }
+        return $mediaList;
+    }
+
+    function getProductCats($allcats, $pcats) {
+        $cats = [];
+        foreach ($pcats as $pcat) {
+            if (isset($allcats[$pcat])) {
+                $cats[] = $allcats[$pcat];
+            }
+        }
+        $categories = implode(', ', $cats);
+        return $categories;
     }
 
     function saveToJson($filename, $data) {
