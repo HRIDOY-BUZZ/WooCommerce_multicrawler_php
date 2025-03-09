@@ -18,7 +18,7 @@
         $per_page = 100;
         //*END DEFINE
 
-        echo "$i of $count.\tFetching products from [" . constyle(strtoupper($storeUrl), 33) . "]\n\n";
+        echo $i+1 . " of $count.\tFetching products from [" . constyle(strtoupper($storeUrl), 33) . "]\n\n";
 
        //get product count and page count
         $response = get_counts($storeUrl);
@@ -34,7 +34,7 @@
         $productCount = $response['count'];
         $pageCount = ceil($productCount / $per_page);
 
-        echo constyle("\tTotal Products Availale : ", 93) . constyle(constyle($productCount, 91), 1) . "\n";
+        echo constyle("\tTotal Products Available : ", 93) . constyle(constyle($productCount, 91), 1) . "\n";
 
         $wpdata = "/wp-json/wp/v2/product?per_page=" . $per_page . "&_fields=id,status,title,link,excerpt,featured_media,yoast_head_json,product_cat,class_list,bundle_stock_status&page=";
         $wpJsonUrl = 'https://' . $storeUrl . $wpdata;
@@ -69,9 +69,9 @@
                             $prod['id'] = $d->id;
                             $prod['title'] = $d->title->rendered;
                             $prod['link'] = $d->link;
-                            $prod['excerpt'] = $d->excerpt->rendered;
+                            $prod['excerpt'] = strip_tags($d->excerpt->rendered);
                             $prod['featured_media'] = $d->featured_media;
-                            $prod['og_image'] = $d->yoast_head_json ? get_og_image($d->yoast_head_json) : "";
+                            $prod['og_image'] = isset($d->yoast_head_json) ? get_og_image($d->yoast_head_json) : "";
                             $prod['categories'] = $d->product_cat ? $d->product_cat : null;
                             $all_cats = array_merge($all_cats, $prod['categories']);
                             // $prod['class_list'] = $d->class_list ?? null;

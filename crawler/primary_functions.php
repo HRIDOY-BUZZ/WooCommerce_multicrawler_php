@@ -68,15 +68,12 @@
                 $productInfos = $raw_data['products'];
                 $allProducts = [];
 
-                echo ++$i . " of ". count($productInfos) . ".\tUpdating Data of [" . constyle(strtoupper($storeDomain), 33) . "]\n\n";
+                echo ++$i . " of ". count($shopFiles) . ".\tUpdating Data of [" . constyle(strtoupper($storeDomain), 33) . "]\n\n";
 
                 $allcats = getCategories($storeDomain, $catIds);
                 $allMedia = getMediaList($storeDomain, $productInfos);
                 $newProductInfos = [];
-                $loader = ['-', '\\', '|', '/'];
                 foreach ($productInfos as $productInfo) {
-                    clear_line();
-                    echo "[" . $loader[$i % 4] . "] " . "\t\tUpdating...";
                     $categories = getProductCats($allcats, $productInfo['categories']);
                     $productInfo['categories'] = $categories;
 
