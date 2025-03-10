@@ -18,7 +18,7 @@
         $per_page = 100;
         //*END DEFINE
 
-        echo $i+1 . " of $count.\tFetching products from [" . constyle(strtoupper($storeUrl), 33) . "]\n\n";
+        echo $i . " of $count.\tFetching products from [" . constyle(strtoupper($storeUrl), 33) . "]\n\n";
 
        //get product count and page count
         $response = get_counts($storeUrl);
@@ -95,10 +95,14 @@
         sleep(1);
         clear_line();
         echo "\t" . constyle("Total Products Collected: ", 93).constyle(constyle(count($products), 91), 1) . "\n\n";
-        return [
-            'categories' => array_values(array_unique($all_cats)),
-            'products' => $products
-        ];
+
+        if(empty($products)) return false;
+        else {
+            return [
+                'categories' => array_values(array_unique($all_cats)),
+                'products' => $products
+            ];
+        }
     }
 
     function get_counts($url) {
@@ -132,14 +136,75 @@
         ];
     }
 
-    function getPrice($link) {
-        $price = 0;
+    function getPrices($domain, $products) {
+        $prices = [];
+        echo "\n";
 
-        // $response = get_contents($link);
-        // if ($response[0] == 200) {
-        //     $data = json_decode($response[1]);
-        //     $price = $data->price;
-        // }
-        return $price;
+        for ($i = 0; $i < count($products); $i+=20) {
+            $links = [];
+            $ten = [];
+            $prices = [];
+            for ($j = $i; $j < $i +20; $j++) {
+                $p = [];
+                if ($j >= count($products)) break;
+                $links[] = $products[$j]['link'];
+                $p['id'] = $products[$j]['id'];
+                $p['RPrice'] = null;
+                $p['SPrice'] = null;
+                $p['availability'] = $products[$j]['availability'];
+                $ten[] = $p;
+            }
+            // echo "TEST - before curl\t";
+            $responses = get_multi_contents($links);
+            // echo "TEST - after curl\t";
+            if(count($responses) < count($links)) {
+                $i-20;
+            } else {
+                for ($j = 0; $j < 20; $j++)  {
+                    if($j >= count($responses)) break;
+                    $res = $responses[$j];
+
+                    if ($res[0] == 200) {
+                        $data = $res[1];
+
+                        $dom = new \DOMDocument();
+                        libxml_use_internal_errors(true);
+                        @$dom->loadHTML($data);
+                        libxml_use_internal_errors(false);
+                        $xpath = new \DOMXPath($dom);
+
+                        $nodes = $xpath->query('//p[contains(@class, "price")]/ins');
+                        if($nodes->length > 0) {
+                            $node = $nodes->item(0);
+                            $price = $node->textContent;
+                            $ten[$j]['SPrice'] = filter_price($price);
+
+                            $nodes = $xpath->query('//p[contains(@class, "price")]/del');
+                            if($nodes->length > 0) {
+                                $node = $nodes->item(0);
+                                $price = $node->textContent;
+                                $ten[$j]['RPrice'] = filter_price($price);
+                            }
+                        } else {
+                            $nodes = $xpath->query('//p[contains(@class, "price")]/span');
+                            if($nodes->length > 0) {
+                                $node = $nodes->item(0);
+                                $price = $node->textContent;
+                                $ten[$j]['SPrice'] = "";
+                                $ten[$j]['RPrice'] = filter_price($price);
+                            } else {
+                                $ten[$j]['SPrice'] = "";
+                                $ten[$j]['RPrice'] = "";
+                            }
+                        }
+                    } else {
+                        $i-=20;
+                    }
+                    echo $i + $j . ". Sale Price: ".$ten[$j]['SPrice']."\tRegular Price: ".$ten[$j]['RPrice']."\tAvailability: ".$ten[$j]['availability']."\n";
+                    $prices[] = $ten[$j];
+                }
+            }
+        }
+        return $prices;
     }
 ?>

@@ -6,6 +6,7 @@
         if (!$storeUrls) return false;
         
         $i = 0;
+        $c = 0;
         $start_time = microtime(true);
         foreach ($storeUrls as $storeUrl) {
 
@@ -24,7 +25,7 @@
                     continue;
                 }
 
-                $productdata = fetchAllProducts(count($storeUrls), $i, $storeUrl);
+                $productdata = fetchAllProducts(count($storeUrls), ++$c, $storeUrl);
                 if ($productdata) {
                     saveToJson($shopFile, $productdata);
                 } else {
@@ -70,8 +71,19 @@
 
                 echo ++$i . " of ". count($shopFiles) . ".\tUpdating Data of [" . constyle(strtoupper($storeDomain), 33) . "]\n\n";
 
+                echo "\t" . constyle("Getting Categories...", 92) . "\t";
                 $allcats = getCategories($storeDomain, $catIds);
+                echo constyle("Done!", 92) . "\n";
+
+                echo "\t" . constyle("Getting Images...", 92) . "\t";
                 $allMedia = getMediaList($storeDomain, $productInfos);
+                echo constyle("Done!", 92) . "\n";
+
+                echo "\t" . constyle("Getting Prices...", 92) . "\t";
+                $prices = getPrices($storeDomain, $productInfos);
+                echo constyle("Done!", 92) . "\n";
+                echo "\t" . "PRICE_LIST: ". count($prices) . "\n";
+
                 $newProductInfos = [];
                 foreach ($productInfos as $productInfo) {
                     $categories = getProductCats($allcats, $productInfo['categories']);
@@ -88,6 +100,7 @@
                 }
                 $newFile = __DIR__ . '/../shops2/' . $storeDomain . '.json';
                 saveToJson($newFile, $newProductInfos);
+                unlink($shopFile);
             }
             return true;
         }
@@ -138,6 +151,7 @@
                     fputcsv($fp, $formatedData);
                 }
                 fclose($fp);
+                unlink($shopFile);
             }
             return true;
         }

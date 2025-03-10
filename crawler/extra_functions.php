@@ -194,7 +194,7 @@
         }
     
         return $results;
-    }    
+    }
     
     function filter_domains($storeUrls) {
         $new_domains = [];
@@ -299,6 +299,13 @@
         }
         $categories = implode(', ', $cats);
         return $categories;
+    }
+
+    function filter_price($price) {
+        $price = str_replace('AUD', '', $price);
+        $price = str_replace('$', '', $price);
+        $price = str_replace(',', '', $price);
+        return $price;
     }
 
     function saveToJson($filename, $data) {
