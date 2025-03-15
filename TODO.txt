@@ -1,0 +1,3 @@
+1. Handle Category Failure
+2. Handle Price progress issue
+3. Handle Price response failure
