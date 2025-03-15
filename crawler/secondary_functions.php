@@ -138,12 +138,10 @@
 
     function getPrices($domain, $products) {
         $prices = [];
-        echo "\n";
-
+        
         for ($i = 0; $i < count($products); $i+=20) {
             $links = [];
             $ten = [];
-            $prices = [];
             for ($j = $i; $j < $i +20; $j++) {
                 $p = [];
                 if ($j >= count($products)) break;
@@ -197,13 +195,21 @@
                                 $ten[$j]['RPrice'] = "";
                             }
                         }
+                        $prices[$ten[$j]['id']] = $ten[$j];
                     } else {
                         $i-=20;
                     }
-                    echo $i + $j . ". Sale Price: ".$ten[$j]['SPrice']."\tRegular Price: ".$ten[$j]['RPrice']."\tAvailability: ".$ten[$j]['availability']."\n";
-                    $prices[] = $ten[$j];
+                    // echo (count($products)/100) * count($prices) . "%\t";
+                    // echo $i + $j . ". Sale Price: ".$ten[$j]['SPrice']."\tRegular Price: ".$ten[$j]['RPrice']."\tAvailability: ".$ten[$j]['availability']."\n";
+                    
                 }
             }
+            clear_line();
+            echo "\t" . constyle("Getting Prices...", 92) . "\t";
+            echo count($prices) . " of " . count($products) . " [" .  round(count($prices)/count($products)*100, 2) ."%]" . "\t";
+        }
+        if(count($prices) < count($products)) {
+            echo "\t" . constyle( count($products) - count($prices) . 92) . "\t";
         }
         return $prices;
     }

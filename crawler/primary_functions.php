@@ -80,27 +80,39 @@
                 echo constyle("Done!", 92) . "\n";
 
                 echo "\t" . constyle("Getting Prices...", 92) . "\t";
-                $prices = getPrices($storeDomain, $productInfos);
+                $price_list = getPrices($storeDomain, $productInfos);
                 echo constyle("Done!", 92) . "\n";
-                echo "\t" . "PRICE_LIST: ". count($prices) . "\n";
 
                 $newProductInfos = [];
+                $removed = 0;
                 foreach ($productInfos as $productInfo) {
                     $categories = getProductCats($allcats, $productInfo['categories']);
                     $productInfo['categories'] = $categories;
 
                     if(isset($productInfo['og_image']) && $productInfo['og_image'] != "") {
-                        $productInfo['featured_media'] = $productInfo['og_image'];
+                        $productInfo['image'] = $productInfo['og_image'];
                     } else {
-                        $productInfo['featured_media'] = $allMedia[$productInfo['featured_media']] ?? "";
+                        $productInfo['image'] = $allMedia[$productInfo['featured_media']] ?? "";
                     }
                     unset($productInfo['og_image']);
+                    unset($productInfo['featured_media']);
 
-                    $newProductInfos[] = $productInfo;
+                    $prices = $price_list[$productInfo['id']];
+                    // var_dump($prices); exit;
+                    $productInfo['RPrice'] = $prices['RPrice'];
+                    $productInfo['SPrice'] = $prices['SPrice'];
+
+                    if($productInfo['RPrice'] == null || $productInfo['RPrice'] == "") {
+                        $removed++;
+                    } else {
+                        $newProductInfos[] = $productInfo;
+                    }
                 }
                 $newFile = __DIR__ . '/../shops2/' . $storeDomain . '.json';
                 saveToJson($newFile, $newProductInfos);
-                unlink($shopFile);
+                echo "\t" . constyle("Updated ", 92) . constyle(count($newProductInfos), 96) . "\n";
+                echo "\t" . constyle("Ignored ", 91) . constyle($removed, 92) . "\n\n";
+                // unlink($shopFile);
             }
             return true;
         }
@@ -137,21 +149,21 @@
 
                 foreach ($products as $product) {
                     $formatedData = [
-                        'id'            =>  $product['id']              ??  0,
-                        'title'         =>  $product['title']           ??  "",
-                        'categories'    =>  $product['categories']      ??  "",
-                        'regular_price' =>  $product['regular_price']   ??  0,
-                        'sale_price'    =>  $product['sale_price']      ??  0,
-                        'brand'         =>  $product['brand']           ??  "",
-                        'stock'         =>  $product['availability']    ??  "N/A",
-                        'link'          =>  $product['link']            ??  "",
-                        'image'         =>  $product['featured_media']  ??  "",
-                        'description'   =>  $product['excerpt']         ??  ""
+                        'id'            =>  $product['id']          ??  0,
+                        'title'         =>  $product['title']       ??  "",
+                        'categories'    =>  $product['categories']  ??  "",
+                        'regular_price' =>  $product['RPrice']      ??  0,
+                        'sale_price'    =>  $product['SPrice']      ??  0,
+                        'brand'         =>  $product['brand']       ??  "",
+                        'stock'         =>  $product['availability']??  "N/A",
+                        'link'          =>  $product['link']        ??  "",
+                        'image'         =>  $product['image']       ??  "",
+                        'description'   =>  $product['excerpt']     ??  ""
                     ];
                     fputcsv($fp, $formatedData);
                 }
                 fclose($fp);
-                unlink($shopFile);
+                // unlink($shopFile);
             }
             return true;
         }
