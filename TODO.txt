@@ -1,3 +1,5 @@
-1. Handle Category Failure
-2. Handle Price progress issue
-3. Handle Price response failure
+* Price retry logic fix
+* Fix Category Infinite Loop Issue
+* Fix Media Infinite Loop Issue
+* Handle Price progress issue
+* Handle Price response failure

@@ -140,9 +140,11 @@
         $prices = [];
         
         for ($i = 0; $i < count($products); $i+=20) {
+            if($i < 0) $i = 0;
+        
             $links = [];
             $ten = [];
-            for ($j = $i; $j < $i +20; $j++) {
+            for ($j = $i; $j < $i+20; $j++) {
                 $p = [];
                 if ($j >= count($products)) break;
                 $links[] = $products[$j]['link'];
@@ -152,16 +154,17 @@
                 $p['availability'] = $products[$j]['availability'];
                 $ten[] = $p;
             }
-            // echo "TEST - before curl\t";
+
             $responses = get_multi_contents($links);
-            // echo "TEST - after curl\t";
+
             if(count($responses) < count($links)) {
-                $i-20;
+                $i-=20;
             } else {
                 for ($j = 0; $j < 20; $j++)  {
                     if($j >= count($responses)) break;
-                    $res = $responses[$j];
 
+                    $res = $responses[$j];
+                    echo "RES: " . $res[0] . "\n";   
                     if ($res[0] == 200) {
                         $data = $res[1];
 
@@ -196,6 +199,7 @@
                             }
                         }
                         $prices[$ten[$j]['id']] = $ten[$j];
+                        print_r($ten[$j]);
                     } else {
                         $i-=20;
                     }
@@ -206,7 +210,8 @@
             }
             clear_line();
             echo "\t" . constyle("Getting Prices...", 92) . "\t";
-            echo count($prices) . " of " . count($products) . " [" .  round(count($prices)/count($products)*100, 2) ."%]" . "\t";
+            $per = round(count($prices)/count($products)*100, 2);
+            echo constyle(constyle(count($prices), 91), 1) . constyle(" of ", 93) . constyle(constyle(count($products), 91), 1) . constyle(" [" .  $per ."%]" , 96) . "\t";
         }
         if(count($prices) < count($products)) {
             echo "\t" . constyle( count($products) - count($prices) . 92) . "\t";

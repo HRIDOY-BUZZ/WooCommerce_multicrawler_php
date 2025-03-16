@@ -110,6 +110,7 @@
                 }
                 $newFile = __DIR__ . '/../shops2/' . $storeDomain . '.json';
                 saveToJson($newFile, $newProductInfos);
+                echo "\n\n";
                 echo "\t" . constyle("Updated ", 92) . constyle(count($newProductInfos), 96) . "\n";
                 echo "\t" . constyle("Ignored ", 91) . constyle($removed, 92) . "\n\n";
                 // unlink($shopFile);

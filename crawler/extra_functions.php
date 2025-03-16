@@ -224,6 +224,7 @@
     }
 
     function get_og_image($yoast) {
+        return "";
         if(isset($yoast->og_image)) {
             return $yoast->og_image[0]->url;
         } else {
@@ -267,26 +268,63 @@
                 }
             }
         }
+        if(count($all_cats) == 0 && count($catIds) > 0) {
+            getCategories($storeUrl, $catIds);
+        }
+        echo constyle(constyle(count($catIds), 91), 1)  . constyle(" of ", 93) . constyle(constyle(count($all_cats), 91), 1) . "\t";
         return $all_cats;
     }
 
     function getMediaList($storeUrl, $products) {
         $mediaIdList = "";
         $mediaList = [];
+        $urls = [];
+        $i = 0;
+        $j = 0;
+        $url = "https://" . $storeUrl . "/wp-json/wp/v2/media?_fields=id,guid&per_page=100";
+        
         foreach ($products as $product) {
             if ($product['og_image'] == '' && $product['featured_media'] != '') {
-                $mediaIdList .= "&include[]=" . $product['featured_media'];
+                if($i == 99) {
+                    $i = 0;
+                    $j++;
+                }
+                if($i == 0) {
+                    $urls[$j] = $url;
+                }
+                $urls[$j] .= "&include[]=" . $product['featured_media'];
+                $i++;
             }
         }
-        $url = "https://" . $storeUrl . "/wp-json/wp/v2/media?_fields=id,guid&per_page=100" . $mediaIdList;
+        // echo count($urls) . "\t";
+        // echo $urls[0] . "\n";
+
+        if(count($urls) > 1) {
+            $responses = get_multi_contents($urls);
+            foreach ($responses as $response) {
+                if ($response[0] == 200) {
+                    $data = json_decode($response[1]);
+                    foreach ($data as $d) {
+                        $mediaList[$d->id] = $d->guid->rendered;
+                    }
+                }
+                // echo count($mediaList) . "\t";
+            }
+        } else {
+            $response = get_contents($url);
+            if ($response[0] == 200) {
+                $data = json_decode($response[1]);
+                foreach ($data as $d) {
+                    $mediaList[$d->id] = $d->guid->rendered;
+                }
+            }
+        }
         // echo $url;
-        $response = get_contents($url);
-        if ($response[0] == 200) {
-            $data = json_decode($response[1]);
-            foreach ($data as $d) {
-                $mediaList[$d->id] = $d->guid->rendered;
-            }
+        
+        if(count($mediaList) == 0 && count($products) > 0) {
+            getMediaList($storeUrl, $products);
         }
+        echo constyle(constyle(count($mediaList), 91), 1)  . constyle(" of ", 93) . constyle(constyle(count($products), 91), 1) . "\t";
         return $mediaList;
     }
 
