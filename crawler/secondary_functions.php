@@ -84,6 +84,8 @@
                         echo constyle("\tPage: " . $page . " of " . $pageCount . "\tFetching Product Infos... ", 92) . constyle(count($ids), 91) . constyle(" " . $dots, 33);
                     }
                     if($i<1) break;
+                } else {
+                    echo "\n\t" . constyle("ERROR " . $res[0] . ": " . $res[1], 91) . "\n\n";
                 }
             }
             $page++;
@@ -136,8 +138,82 @@
         ];
     }
 
+    function getPricesSerially($domain, $products) {
+        $prices = [];
+        
+        foreach ($products as $product) {
+            $retries = 0;
+            $p = [];
+            $p['id'] = $product['id'];
+            $p['RPrice'] = null;
+            $p['SPrice'] = null;
+            $p['availability'] = $product['availability'];
+A:
+            $response = get_contents($product['link']);
+
+            // echo "RES: " . $response[0] . "\n"; 
+
+            if ($response[0] == 200) {
+                $data = $response[1];
+
+                $dom = new \DOMDocument();
+                libxml_use_internal_errors(true);
+                @$dom->loadHTML($data);
+                libxml_use_internal_errors(false);
+                $xpath = new \DOMXPath($dom);
+
+                $nodes = $xpath->query('//p[contains(@class, "price")]/ins');
+                if($nodes->length > 0) {
+                    $node = $nodes->item(0);
+                    $price = $node->textContent;
+                    $p['SPrice'] = filter_price($price);
+
+                    $nodes = $xpath->query('//p[contains(@class, "price")]/del');
+                    if($nodes->length > 0) {
+                        $node = $nodes->item(0);
+                        $price = $node->textContent;
+                        $p['RPrice'] = filter_price($price);
+                    }
+                } else {
+                    $nodes = $xpath->query('//p[contains(@class, "price")]/span');
+                    if($nodes->length > 0) {
+                        $node = $nodes->item(0);
+                        $price = $node->textContent;
+                        $p['SPrice'] = "";
+                        $p['RPrice'] = filter_price($price);
+                    } else {
+                        $p['SPrice'] = "";
+                        $p['RPrice'] = "";
+                    }
+                }
+                
+            } else {
+                if($retries < 2) {
+                    if($retries == 0) {
+                        echo "\n\t" . constyle("ERROR " . $response[0] . ": " . $response[1], 91) . "\n" . constyle($product['link'], 31) . "\n\n";
+                    } else {
+                        echo "\t" . constyle("retrying... ($retries)", 92). "\t";
+                    }
+                    $retries++;
+                    sleep(1);
+                    goto A;
+                }
+            }
+
+            $prices[$p['id']] = $p;
+
+            clear_line();
+            echo "\t" . constyle("Getting Prices (slow)...", 92) . "\t";
+            $per = round(count($prices)/count($products)*100, 2);
+            echo constyle(constyle(count($prices), 91), 1) . constyle(" of ", 93) . constyle(constyle(count($products), 91), 1) . constyle(" [" .  $per ."%]" , 96) . "\t";
+        }
+
+        return $prices;
+    }
+
     function getPrices($domain, $products) {
         $prices = [];
+        $fails = 0;
         
         for ($i = 0; $i < count($products); $i+=20) {
             if($i < 0) $i = 0;
@@ -155,6 +231,8 @@
                 $ten[] = $p;
             }
 
+            $retries = 0;
+A:
             $responses = get_multi_contents($links);
 
             if(count($responses) < count($links)) {
@@ -164,7 +242,7 @@
                     if($j >= count($responses)) break;
 
                     $res = $responses[$j];
-                    echo "RES: " . $res[0] . "\n";   
+                    // echo "RES: " . $res[0] . "\n";   
                     if ($res[0] == 200) {
                         $data = $res[1];
 
@@ -199,9 +277,30 @@
                             }
                         }
                         $prices[$ten[$j]['id']] = $ten[$j];
-                        print_r($ten[$j]);
+                        // print_r($ten[$j]);
+                    } else if($res[0] == 1) {
+                        if($retries < 3) {
+                            $retries++;
+                            sleep(1);
+                            goto A;
+                        }
+                        $fails++;
+                        if($fails > 20) {
+                            return false;
+                        }
                     } else {
+                        if($retries < 2) {
+                            if($retries == 0) {
+                                echo "\n\t" . constyle("ERROR " . $res[0] . ": " . $res[1], 91) . "\n" . constyle($links[$j], 31) . "\n\n";
+                            } else {
+                                echo "\t" . constyle("retrying... ($retries)", 92). "\t";
+                            }
+                            $retries++;
+                            sleep(1);
+                            goto A;
+                        }
                         $i-=20;
+                        break;
                     }
                     // echo (count($products)/100) * count($prices) . "%\t";
                     // echo $i + $j . ". Sale Price: ".$ten[$j]['SPrice']."\tRegular Price: ".$ten[$j]['RPrice']."\tAvailability: ".$ten[$j]['availability']."\n";
@@ -211,7 +310,7 @@
             clear_line();
             echo "\t" . constyle("Getting Prices...", 92) . "\t";
             $per = round(count($prices)/count($products)*100, 2);
-            echo constyle(constyle(count($prices), 91), 1) . constyle(" of ", 93) . constyle(constyle(count($products), 91), 1) . constyle(" [" .  $per ."%]" , 96) . "\t";
+            echo constyle(constyle(count($prices), 91), 1) . constyle(" of ", 93) . constyle(constyle(count($products), 91), 1) . constyle(" [" .  $per ."%]" , 96) . "\t" . constyle(constyle($fails, 31), 1) . "\t";
         }
         if(count($prices) < count($products)) {
             echo "\t" . constyle( count($products) - count($prices) . 92) . "\t";

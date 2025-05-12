@@ -81,6 +81,10 @@
 
                 echo "\t" . constyle("Getting Prices...", 92) . "\t";
                 $price_list = getPrices($storeDomain, $productInfos);
+                if(!$price_list) {
+                    echo "\t" . constyle("\n\t Fast crawl failed. Slow crawl initiated...", 93) . "\n";
+                    $price_list = getPricesSerially($storeDomain, $productInfos);
+                }
                 echo constyle("Done!", 92) . "\n";
 
                 $newProductInfos = [];
