@@ -1,5 +1,3 @@
 * Price retry logic fix
 * Fix Category Infinite Loop Issue
 * Fix Media Infinite Loop Issue
-* Handle Price progress issue
-* Handle Price response failure
